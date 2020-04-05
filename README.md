@@ -10,4 +10,5 @@ A simple speech to text to speech program that enables you to talk without revea
 Run `moe.py` and start speaking after the first beep. After you stop talking the second beep marks the ending of the recording.
 
 ### Credit
-Sounds made with [sfxr](http://www.drpetter.se/project_sfxr.html)
+- Sounds made with [sfxr](http://www.drpetter.se/project_sfxr.html)
+- Based on https://realpython.com/python-speech-recognition/
