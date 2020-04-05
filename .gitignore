@@ -1,0 +1,7 @@
+# VS
+.vs/
+*.pyproj
+*.sln
+
+speech.mp3
+wit_token.txt
