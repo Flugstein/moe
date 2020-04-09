@@ -1,7 +1,6 @@
 import speech_recognition as sr
 from gtts import gTTS
 from googletrans import Translator
-from playsound import playsound
 import sounddevice as sd
 from pydub import AudioSegment
 from pydub.playback import play
@@ -58,7 +57,7 @@ def queue_text_to_playback_thread(text_queue, playback_queue):
 
             print('{} - Generating playback for: "{}"'.format(id, text))
             text = translator.translate(text, dest='en').text  # translate generated text if needed
-            speech = gTTS(text, lang='it')  # select language to speak in different accent
+            speech = gTTS(text, lang='it')  # set spoken output language to speak in different accent
             mp3_fp = BytesIO()
             speech.write_to_fp(mp3_fp)
             mp3_fp.seek(0)
@@ -78,7 +77,7 @@ def queue_playback_thread(playback_queue):
 
             print('{} - Playback: "{}"'.format(id, text))
             audio = AudioSegment.from_file(playback, format='mp3')
-            sd.play(np.array(audio.get_array_of_samples()), samplerate=audio.frame_rate, device=output_device)
+            sd.play(np.array(audio.get_array_of_samples()), samplerate=audio.frame_rate)
 
         playback_queue.task_done()
 
@@ -86,7 +85,7 @@ def queue_playback_thread(playback_queue):
 if __name__ == '__main__':
 
     print(sd.query_devices())
-    output_device = 12  # set VoiceMeeter Input device id here (or whatever output device you want)
+    # sd.default.device = 12  # set output device id here if you don't want to use the default device
 
     recognizer = sr.Recognizer()
     microphone = sr.Microphone()
