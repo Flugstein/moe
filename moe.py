@@ -1,6 +1,8 @@
 import speech_recognition as sr
 from gtts import gTTS
+from googletrans import Translator
 from playsound import playsound
+import sounddevice as sd
 from pydub import AudioSegment
 from pydub.playback import play
 from io import BytesIO
@@ -9,15 +11,15 @@ from threading import Thread
 from queue import Queue
 import signal
 import sys
+import numpy as np
 
 
 def queue_record(recognizer, microphone, record_queue):
     id = 0
     while True:
         with microphone as source:
-            recognizer.adjust_for_ambient_noise(source)
             print('{} - Recording...'.format(id))
-            record = recognizer.listen(source)
+            record = recognizer.listen(microphone)
             print('{} - Got it'.format(id))
 
         record_dict = {'id': id, 'record': record}
@@ -34,7 +36,7 @@ def queue_record_to_text_thread(record_queue, text_queue):
 
             print('{} - Generating text...'.format(id))
             try:
-                text = recognizer.recognize_google(record)
+                text = recognizer.recognize_google(record, language='de-DE')  # set your spoken language here
                 print('{} - You said: "{}"'.format(id, text))
 
                 text_dict = {'id': id, 'text': text}
@@ -55,7 +57,8 @@ def queue_text_to_playback_thread(text_queue, playback_queue):
             text = text_dict['text']
 
             print('{} - Generating playback for: "{}"'.format(id, text))
-            speech = gTTS(text, lang='it')
+            text = translator.translate(text, dest='en').text  # translate generated text if needed
+            speech = gTTS(text, lang='it')  # select language to speak in different accent
             mp3_fp = BytesIO()
             speech.write_to_fp(mp3_fp)
             mp3_fp.seek(0)
@@ -74,15 +77,23 @@ def queue_playback_thread(playback_queue):
             playback = playback_dict['playback']
 
             print('{} - Playback: "{}"'.format(id, text))
-            play(AudioSegment.from_file(playback, format='mp3'))
+            audio = AudioSegment.from_file(playback, format='mp3')
+            sd.play(np.array(audio.get_array_of_samples()), samplerate=audio.frame_rate, device=output_device)
 
         playback_queue.task_done()
 
 
 if __name__ == '__main__':
 
+    print(sd.query_devices())
+    output_device = 12  # set VoiceMeeter Input device id here (or whatever output device you want)
+
     recognizer = sr.Recognizer()
     microphone = sr.Microphone()
+    with microphone as source:
+        recognizer.adjust_for_ambient_noise(source)
+
+    translator = Translator()
 
     record_queue = Queue(maxsize=0)
     text_queue = Queue(maxsize=0)
